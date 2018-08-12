@@ -49,10 +49,10 @@ public class CrawlerRssApplicationTests {
     }
 
 	@Test
-	public void contextLoads() throws Exception {
+	public void showItemsFromDefaultFeed() throws Exception {
 		mockMvc.perform(get("/showItems")
                 .contentType(contentType))
                 .andExpect(status().isOk());
 	}
-
+	
 }

@@ -2,6 +2,9 @@ package com.pedro.crawler.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+
+@JsonTypeName("item")
 public class FeedItem {
 
 	private final String title;

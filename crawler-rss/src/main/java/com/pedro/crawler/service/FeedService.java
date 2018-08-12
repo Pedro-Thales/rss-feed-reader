@@ -7,7 +7,6 @@ import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import com.pedro.crawler.model.DescriptionType;
 import com.pedro.crawler.model.FeedItem;
@@ -19,49 +18,70 @@ import com.rometools.rome.io.XmlReader;
 
 public final class FeedService {
 
-	public final static List<FeedItem> getFeed() {
+	public static List<FeedItem> getFeed(final String url) {
 		List<FeedItem> itens = new ArrayList<>();
-		try {
-			String url = "https://revistaautoesporte.globo.com/rss/ultimas/feed.xml";
 
-			try (XmlReader reader = new XmlReader(new URL(url))) {
-				SyndFeed feed = new SyndFeedInput().build(reader);
-				System.out.println(feed.getTitle());
-				System.out.println("***********************************");
-				for (SyndEntry entry : feed.getEntries()) {
+		try (XmlReader reader = new XmlReader(new URL(url))) {
 
-					String title = entry.getTitle();
+			SyndFeed feed = new SyndFeedInput().build(reader);
 
-					String link = entry.getLink();
+			for (SyndEntry entry : feed.getEntries()) {
+				String title = entry.getTitle();
+				String link = entry.getLink();
+				String html = entry.getDescription().getValue();
 
-					String html = entry.getDescription().getValue();
-					Document doc = Jsoup.parse(html);
-					List<FeedItemDescription<?>> listDescription = new ArrayList<>();
-					Elements paragraphs = doc.select("p");
-					for (Element ele : paragraphs) {
-						if (!ele.text().isEmpty()) {
-							listDescription.add(new FeedItemDescription<String>(DescriptionType.text, ele.text()));
-						}
-					}
-
-					List<String> list = new ArrayList<>();
-
-					Elements links = doc.select("div > ul > li > a");
-					for (Element ele : links) {
-						list.add(ele.attr("href"));
-					}
-
-					listDescription.add(new FeedItemDescription<List<String>>(DescriptionType.links, list));
-
-					itens.add(new FeedItem(title, link, listDescription));
-
-				}
+				itens.add(extractFromHtml(title, link, html));
 			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		return itens;
+	}
+
+	private static FeedItem extractFromHtml(final String title, final String link, final String html) {
+		Document doc = Jsoup.parse(html);
+
+		List<FeedItemDescription<?>> listDescription = buildDescription(doc);
+
+		return new FeedItem(title, link, listDescription);
+	}
+
+	private static List<FeedItemDescription<?>> buildDescription(Document document) {
+
+		List<FeedItemDescription<?>> listDescription = new ArrayList<>();
+
+		for (Element ele : document.getAllElements()) {
+			parseElements(listDescription, ele);
+		}
+
+		return listDescription;
+	}
+
+	private static void parseElements(List<FeedItemDescription<?>> listDescription, Element element) {
+
+		if (element.is("p")) {
+			if (!element.text().isEmpty()) {
+				listDescription.add(new FeedItemDescription<String>(DescriptionType.text, element.text()));
+			}
+		}
+
+		if (element.is("div > ul")) {
+			listDescription.add(new FeedItemDescription<List<String>>(DescriptionType.links, getInnerLinks(element)));
+		}
+
+		if (element.is("div > img")) {
+			listDescription.add(new FeedItemDescription<String>(DescriptionType.image, element.attr("src")));
+		}
+	}
+
+	private static List<String> getInnerLinks(Element element) {
+		List<String> linksList = new ArrayList<>();
+		for (Element innerLinkElement : element.select("li > a")) {
+			linksList.add(innerLinkElement.attr("href"));
+		}
+		return linksList;
 	}
 
 }
