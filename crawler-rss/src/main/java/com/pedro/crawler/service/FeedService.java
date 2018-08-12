@@ -1,4 +1,4 @@
-package com.pedro.crawler;
+package com.pedro.crawler.service;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -17,9 +17,10 @@ import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
 
-public class FeedReader {
+public final class FeedService {
 
-	public static void main(String[] args) {
+	public final static List<FeedItem> getFeed() {
+		List<FeedItem> itens = new ArrayList<>();
 		try {
 			String url = "https://revistaautoesporte.globo.com/rss/ultimas/feed.xml";
 
@@ -52,9 +53,7 @@ public class FeedReader {
 
 					listDescription.add(new FeedItemDescription<List<String>>(DescriptionType.links, list));
 
-					FeedItem item = new FeedItem(title, link, listDescription);
-
-					System.out.println(item);
+					itens.add(new FeedItem(title, link, listDescription));
 
 				}
 			}
@@ -62,6 +61,7 @@ public class FeedReader {
 			e.printStackTrace();
 		}
 
+		return itens;
 	}
 
 }
